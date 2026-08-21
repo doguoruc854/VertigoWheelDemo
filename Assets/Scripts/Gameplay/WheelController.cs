@@ -13,16 +13,15 @@ public class WheelController : MonoBehaviour
     [SerializeField] private Vector2 slotSize = new Vector2(96f, 96f);
     [SerializeField] private float spinDuration = 2.5f;
     [SerializeField] private int fullRotations = 4;
+    [SerializeField] private Image baseImage;
+    [SerializeField] private Sprite bronzeBase;
+    [SerializeField] private Sprite silverBase;
+    [SerializeField] private Sprite goldenBase;
 
     private Image[] _slotImages;
     private bool _spinning;
 
     public bool IsSpinning => _spinning;
-
-    private void Start()
-    {
-        BuildSlots(config);
-    }
 
     public void BuildSlots(WheelConfigSO wheelConfig)
     {
@@ -137,4 +136,17 @@ public class WheelController : MonoBehaviour
             return;
         SpinToIndex(0, () => Debug.Log("Spin done → index 0"));
     }
+
+    public void ApplyZoneLook(ZoneType zoneType)
+    {
+        if (baseImage == null)
+            return;
+        if (zoneType == ZoneType.Super && goldenBase != null)
+            baseImage.sprite = goldenBase;
+        else if (zoneType == ZoneType.Safe && silverBase != null)
+            baseImage.sprite = silverBase;
+        else if (bronzeBase != null)
+            baseImage.sprite = bronzeBase;
+    }
 }
+

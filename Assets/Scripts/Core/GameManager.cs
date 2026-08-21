@@ -4,12 +4,13 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    [SerializeField] private WheelConfigSO wheelConfig;
     [SerializeField] private HUDController hud;
     [SerializeField] private WheelController wheel;
     [SerializeField] private WheelUIController wheelUI;
     [SerializeField] private ResultUIController resultUI;
-
+    [SerializeField] private WheelConfigSO normalConfig;
+    [SerializeField] private WheelConfigSO safeConfig;
+    [SerializeField] private WheelConfigSO superConfig;
     private ZoneManager _zones;
     private GameStateMachine _state;
     private RewardManager _rewards;
@@ -53,6 +54,7 @@ public class GameManager : MonoBehaviour
     resultUI.Hide();
     RefreshHud();
     RefreshButtons();
+    ApplyCurrentZoneWheel();
 }
 
     private void TrySpin()
@@ -65,8 +67,8 @@ public class GameManager : MonoBehaviour
 
     if (!_state.TryStateTransition(GameState.Spinning))
         return;
-
-    WheelSliceData slice = _resolver.Resolve(wheelConfig);
+    WheelConfigSO config = GetConfigForZone();
+    WheelSliceData slice = _resolver.Resolve(config);
 
     if (slice == null)
     {
@@ -75,7 +77,7 @@ public class GameManager : MonoBehaviour
         return;
     }
 
-    int index = wheelConfig.slices.IndexOf(slice);
+    int index = config.slices.IndexOf(slice);
     if (index < 0)
     {
         Debug.LogWarning("Resolved slice not in config");
@@ -119,6 +121,7 @@ public class GameManager : MonoBehaviour
         Debug.Log("BOMB HIT GAME OVER | Zone " + _zones.CurrentZone + " | Total " + _rewards.TotalCurrency);
         RefreshHud();
         RefreshButtons();
+        ApplyCurrentZoneWheel();
         return;
     }
 
@@ -139,6 +142,7 @@ public class GameManager : MonoBehaviour
         $"Reward OK | Zone {_zones.CurrentZone} ({_zones.CurrentType}) | Total {_rewards.TotalCurrency}");
     RefreshHud();
     RefreshButtons();
+    ApplyCurrentZoneWheel();
 }
         
         public void RequestSpin(){
@@ -181,6 +185,27 @@ public class GameManager : MonoBehaviour
             bool canLeave = idle && !spinning && (_zones.IsSafeZone || _zones.IsSuperZone);
             wheelUI.Refresh(canSpin, canLeave);
         }
+        private WheelConfigSO GetConfigForZone(){
+            if (_zones.IsSuperZone)
+                return superConfig != null ? superConfig : normalConfig;
+            if (_zones.IsSafeZone)
+                return safeConfig != null ? safeConfig : normalConfig;
+            return normalConfig;
+        }
+
+        private void ApplyCurrentZoneWheel(){
+            WheelConfigSO config = GetConfigForZone();
+            if (wheel == null || config == null)
+                return;
+            wheel.BuildSlots(config);
+            wheel.ApplyZoneLook(_zones.CurrentType);
+        }
+        
+        private void Start(){
+            ApplyCurrentZoneWheel();
+            RefreshHud();
+            RefreshButtons();
+        }
 
         [ContextMenu("Debug Jump To Zone 5")]
         private void DebugJumpToZone5(){
@@ -192,5 +217,6 @@ public class GameManager : MonoBehaviour
             RefreshHud();
             RefreshButtons();
             Debug.Log("Debug -> Zone 5 (Safe). Leave should be active.");
+            ApplyCurrentZoneWheel();
         }
 }   

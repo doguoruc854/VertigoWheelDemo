@@ -527,6 +527,10 @@ MonoBehaviour:
   slotSize: {x: 96, y: 96}
   spinDuration: 2.5
   fullRotations: 4
+  baseImage: {fileID: 84957650}
+  bronzeBase: {fileID: 21300000, guid: 77d5d8e688fbf0b4e86e0e8169219d2e, type: 3}
+  silverBase: {fileID: 21300000, guid: 6a2f40e720ad4294aa7be0c911ed2a92, type: 3}
+  goldenBase: {fileID: 21300000, guid: 110a11da5dfdbfe41a0dbb8c2adf2818, type: 3}
 --- !u!114 &613482354
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1891,11 +1895,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68d863a81c17c9545bd8374392f78255, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  wheelConfig: {fileID: 11400000, guid: 9c9ba7beab1c6d045b59dbafbaec3e1f, type: 2}
   hud: {fileID: 1954032491}
   wheel: {fileID: 613482353}
   wheelUI: {fileID: 613482354}
   resultUI: {fileID: 788929302}
+  normalConfig: {fileID: 11400000, guid: 9c9ba7beab1c6d045b59dbafbaec3e1f, type: 2}
+  safeConfig: {fileID: 11400000, guid: a06673416fba53242a335c835091de02, type: 2}
+  superConfig: {fileID: 11400000, guid: 3e1377e8a8f0e3649a0988f4ef6301e9, type: 2}
 --- !u!4 &2146477027
 Transform:
   m_ObjectHideFlags: 0
