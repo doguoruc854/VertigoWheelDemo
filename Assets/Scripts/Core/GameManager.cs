@@ -8,6 +8,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private HUDController hud;
     [SerializeField] private WheelController wheel;
     [SerializeField] private WheelUIController wheelUI;
+    [SerializeField] private ResultUIController resultUI;
 
     private ZoneManager _zones;
     private GameStateMachine _state;
@@ -48,6 +49,8 @@ public class GameManager : MonoBehaviour
     _zones.Reset();
     _state.TryStateTransition(GameState.Idle);
     Debug.Log("Restart → Zone 1, rewards cleared");
+    if (resultUI != null)
+    resultUI.Hide();
     RefreshHud();
     RefreshButtons();
 }
@@ -56,6 +59,9 @@ public class GameManager : MonoBehaviour
 {
     if (wheel != null && wheel.IsSpinning)
         return;
+
+    if (resultUI != null)
+    resultUI.Hide();    
 
     if (!_state.TryStateTransition(GameState.Spinning))
         return;
@@ -98,32 +104,51 @@ public class GameManager : MonoBehaviour
                 new MultiplierRewardEffect().Apply(context);
         } 
 
-        private void ApplySpinResult(WheelSliceData slice){
-            if (!_state.TryStateTransition(GameState.Result))
-            return;
+        private void ApplySpinResult(WheelSliceData slice)
+{
+    if (!_state.TryStateTransition(GameState.Result))
+        return;
 
-            if (slice.isBomb){
+    if (slice.isBomb)
+    {
+        if (resultUI != null)
+            resultUI.ShowBomb(); 
 
-                _rewards.ClearAll();
-                _state.TryStateTransition(GameState.GameOver);
-                Debug.Log("BOMB HIT GAME OVER | Zone " + _zones.CurrentZone + " | Total " + _rewards.TotalCurrency);
-                RefreshHud();
+        _rewards.ClearAll();
+        _state.TryStateTransition(GameState.GameOver);
+        Debug.Log("BOMB HIT GAME OVER | Zone " + _zones.CurrentZone + " | Total " + _rewards.TotalCurrency);
+        RefreshHud();
+        RefreshButtons();
+        return;
+    }
+
+
+    ApplyReward(slice);
+
+    if (resultUI != null)     
+    {
+        Sprite icon = slice.reward != null ? slice.reward.icon : null;
+        int value = slice.reward != null ? slice.reward.value : 0;
+        resultUI.ShowReward(icon, value);
+    }
+
+    _zones.AdvanceZone();
+    _state.TryStateTransition(GameState.Idle);
+
+    Debug.Log(
+        $"Reward OK | Zone {_zones.CurrentZone} ({_zones.CurrentType}) | Total {_rewards.TotalCurrency}");
+    RefreshHud();
+    RefreshButtons();
+}
+        
+        public void RequestSpin(){
+            
+            if (_state.CurrentState == GameState.GameOver){
+                RestartAfterBomb();
                 return;
             }
 
-            ApplyReward(slice);
-            _zones.AdvanceZone();
-            _state.TryStateTransition(GameState.Idle);
-
-            Debug.Log(
-                $"Reward OK | Zone {_zones.CurrentZone} ({_zones.CurrentType}) | Total {_rewards.TotalCurrency}"
-            );
-            RefreshHud();
-            RefreshButtons();
-        }
-        
-        public void RequestSpin(){
-            if(_state.CurrentState != GameState.Idle)
+            if (_state.CurrentState != GameState.Idle)
                 return;
             TrySpin();
             RefreshButtons();
@@ -138,6 +163,8 @@ public class GameManager : MonoBehaviour
                 return;
             if(!_state.TryStateTransition(GameState.GameOver))
                 return;
+            if (resultUI != null)
+            resultUI.Hide();
             Debug.Log($"LEFT WITH REWARDS | Zone {_zones.CurrentZone} | Total {_rewards.TotalCurrency}");
             RefreshHud();
             RefreshButtons();
@@ -149,7 +176,8 @@ public class GameManager : MonoBehaviour
 
             bool idle = _state.CurrentState == GameState.Idle;
             bool spinning = wheel != null && wheel.IsSpinning;
-            bool canSpin = idle && !spinning;
+            bool canSpin = 
+            (idle && !spinning) || (_state.CurrentState == GameState.GameOver);
             bool canLeave = idle && !spinning && (_zones.IsSafeZone || _zones.IsSuperZone);
             wheelUI.Refresh(canSpin, canLeave);
         }
