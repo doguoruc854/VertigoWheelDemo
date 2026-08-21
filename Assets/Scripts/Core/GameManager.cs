@@ -7,6 +7,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private WheelConfigSO wheelConfig;
     [SerializeField] private HUDController hud;
     [SerializeField] private WheelController wheel;
+    [SerializeField] private WheelUIController wheelUI;
 
     private ZoneManager _zones;
     private GameStateMachine _state;
@@ -18,6 +19,8 @@ public class GameManager : MonoBehaviour
         _state = new GameStateMachine();
         _rewards = new RewardManager();
         _resolver = new WheelResolver();
+        RefreshHud();
+        RefreshButtons();
 
     }
     private void RefreshHud(){
@@ -46,6 +49,7 @@ public class GameManager : MonoBehaviour
     _state.TryStateTransition(GameState.Idle);
     Debug.Log("Restart → Zone 1, rewards cleared");
     RefreshHud();
+    RefreshButtons();
 }
 
     private void TrySpin()
@@ -78,7 +82,7 @@ public class GameManager : MonoBehaviour
         ApplySpinResult(slice);
         return;
     }
-
+    RefreshButtons();
     wheel.SpinToIndex(index, () => ApplySpinResult(slice));
 }  
 
@@ -115,5 +119,50 @@ public class GameManager : MonoBehaviour
                 $"Reward OK | Zone {_zones.CurrentZone} ({_zones.CurrentType}) | Total {_rewards.TotalCurrency}"
             );
             RefreshHud();
+            RefreshButtons();
+        }
+        
+        public void RequestSpin(){
+            if(_state.CurrentState != GameState.Idle)
+                return;
+            TrySpin();
+            RefreshButtons();
+        }
+        
+        public void RequestLeave(){
+            if(_state.CurrentState != GameState.Idle)
+                return;
+            if(!_zones.IsSafeZone && !_zones.IsSuperZone)
+                return;
+            if(wheel != null && wheel.IsSpinning)
+                return;
+            if(!_state.TryStateTransition(GameState.GameOver))
+                return;
+            Debug.Log($"LEFT WITH REWARDS | Zone {_zones.CurrentZone} | Total {_rewards.TotalCurrency}");
+            RefreshHud();
+            RefreshButtons();
+        }
+
+        private void RefreshButtons(){
+            if (wheelUI == null)
+                return;
+
+            bool idle = _state.CurrentState == GameState.Idle;
+            bool spinning = wheel != null && wheel.IsSpinning;
+            bool canSpin = idle && !spinning;
+            bool canLeave = idle && !spinning && (_zones.IsSafeZone || _zones.IsSuperZone);
+            wheelUI.Refresh(canSpin, canLeave);
+        }
+
+        [ContextMenu("Debug Jump To Zone 5")]
+        private void DebugJumpToZone5(){
+            if (!Application.isPlaying)
+                return;
+            _zones.Reset();
+            while (_zones.CurrentZone < 5)
+                _zones.AdvanceZone();
+            RefreshHud();
+            RefreshButtons();
+            Debug.Log("Debug -> Zone 5 (Safe). Leave should be active.");
         }
 }   
