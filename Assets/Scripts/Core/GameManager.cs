@@ -6,6 +6,7 @@ public class GameManager : MonoBehaviour
 {
     [SerializeField] private WheelConfigSO wheelConfig;
     [SerializeField] private HUDController hud;
+    [SerializeField] private WheelController wheel;
 
     private ZoneManager _zones;
     private GameStateMachine _state;
@@ -47,37 +48,39 @@ public class GameManager : MonoBehaviour
     RefreshHud();
 }
 
-    private void TrySpin(){
-        if (!_state.TryStateTransition(GameState.Spinning))
+    private void TrySpin()
+{
+    if (wheel != null && wheel.IsSpinning)
         return;
 
-        WheelSliceData slice = _resolver.Resolve(wheelConfig);
-
-        if (!_state.TryStateTransition(GameState.Result))
+    if (!_state.TryStateTransition(GameState.Spinning))
         return;
 
-        if (slice == null){
-            Debug.LogWarning("No slice resolved");
-            _state.TryStateTransition(GameState.Idle);
-            return;
-        }
+    WheelSliceData slice = _resolver.Resolve(wheelConfig);
 
-        if (slice.isBomb) {
-            _rewards.ClearAll();
-            _state.TryStateTransition(GameState.GameOver);
-            Debug.Log($"BOMB HIT GAME OVER | Zone {_zones.CurrentZone} | Total {_rewards.TotalCurrency}");
-            RefreshHud();
-            return;
-        }
-        ApplyReward (slice);
-        _zones.AdvanceZone();
+    if (slice == null)
+    {
+        Debug.LogWarning("No slice resolved");
         _state.TryStateTransition(GameState.Idle);
-
-        Debug.Log(
-            $"Reward OK | Zone {_zones.CurrentZone} ({_zones.CurrentType}) | Total {_rewards.TotalCurrency}");
-        RefreshHud();
         return;
-        }    
+    }
+
+    int index = wheelConfig.slices.IndexOf(slice);
+    if (index < 0)
+    {
+        Debug.LogWarning("Resolved slice not in config");
+        _state.TryStateTransition(GameState.Idle);
+        return;
+    }
+
+    if (wheel == null)
+    {
+        ApplySpinResult(slice);
+        return;
+    }
+
+    wheel.SpinToIndex(index, () => ApplySpinResult(slice));
+}  
 
         private void ApplyReward(WheelSliceData slice){
             if (slice.reward == null)
@@ -90,4 +93,27 @@ public class GameManager : MonoBehaviour
             else if (slice.reward.rewardType == RewardType.Multiplier)
                 new MultiplierRewardEffect().Apply(context);
         } 
-}
+
+        private void ApplySpinResult(WheelSliceData slice){
+            if (!_state.TryStateTransition(GameState.Result))
+            return;
+
+            if (slice.isBomb){
+
+                _rewards.ClearAll();
+                _state.TryStateTransition(GameState.GameOver);
+                Debug.Log("BOMB HIT GAME OVER | Zone " + _zones.CurrentZone + " | Total " + _rewards.TotalCurrency);
+                RefreshHud();
+                return;
+            }
+
+            ApplyReward(slice);
+            _zones.AdvanceZone();
+            _state.TryStateTransition(GameState.Idle);
+
+            Debug.Log(
+                $"Reward OK | Zone {_zones.CurrentZone} ({_zones.CurrentType}) | Total {_rewards.TotalCurrency}"
+            );
+            RefreshHud();
+        }
+}   

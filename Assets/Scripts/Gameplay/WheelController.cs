@@ -48,7 +48,7 @@ public class WheelController : MonoBehaviour
             rt.sizeDelta = slotSize;
 
             float angleDeg = i * step;
-            float rad = (angleDeg - 90f) * Mathf.Deg2Rad;
+            float rad = (angleDeg + 90f) * Mathf.Deg2Rad;
             rt.anchoredPosition = new Vector2(Mathf.Cos(rad) * slotRadius, Mathf.Sin(rad) * slotRadius);
 
             var img = go.GetComponent<Image>();
@@ -125,7 +125,7 @@ public class WheelController : MonoBehaviour
             yield return null;
         }
 
-        spinRoot.localEulerAngles = new Vector3(0f, 0f, targetZ % 360f);
+        spinRoot.localEulerAngles = new Vector3(0f, 0f, Mathf.Repeat(targetZ, 360f));
         _spinning = false;
         onComplete?.Invoke();
     }

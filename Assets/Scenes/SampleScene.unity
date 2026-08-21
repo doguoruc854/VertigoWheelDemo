@@ -931,7 +931,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 0, y: -187}
+  m_AnchoredPosition: {x: 0, y: -243}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1459083522
@@ -1267,6 +1267,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   wheelConfig: {fileID: 11400000, guid: 9c9ba7beab1c6d045b59dbafbaec3e1f, type: 2}
   hud: {fileID: 1954032491}
+  wheel: {fileID: 613482353}
 --- !u!4 &2146477027
 Transform:
   m_ObjectHideFlags: 0
