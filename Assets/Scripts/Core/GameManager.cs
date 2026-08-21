@@ -5,6 +5,7 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
     [SerializeField] private WheelConfigSO wheelConfig;
+    [SerializeField] private HUDController hud;
 
     private ZoneManager _zones;
     private GameStateMachine _state;
@@ -18,6 +19,11 @@ public class GameManager : MonoBehaviour
         _resolver = new WheelResolver();
 
     }
+    private void RefreshHud(){
+    if (hud != null)
+        hud.Refresh(_rewards.TotalCurrency, _zones.CurrentZone);
+}
+
 
     private void Update() {
         if (!Input.GetKeyDown(KeyCode.Space))
@@ -38,6 +44,7 @@ public class GameManager : MonoBehaviour
     _zones.Reset();
     _state.TryStateTransition(GameState.Idle);
     Debug.Log("Restart → Zone 1, rewards cleared");
+    RefreshHud();
 }
 
     private void TrySpin(){
@@ -59,6 +66,7 @@ public class GameManager : MonoBehaviour
             _rewards.ClearAll();
             _state.TryStateTransition(GameState.GameOver);
             Debug.Log($"BOMB HIT GAME OVER | Zone {_zones.CurrentZone} | Total {_rewards.TotalCurrency}");
+            RefreshHud();
             return;
         }
         ApplyReward (slice);
@@ -67,7 +75,8 @@ public class GameManager : MonoBehaviour
 
         Debug.Log(
             $"Reward OK | Zone {_zones.CurrentZone} ({_zones.CurrentType}) | Total {_rewards.TotalCurrency}");
-
+        RefreshHud();
+        return;
         }    
 
         private void ApplyReward(WheelSliceData slice){
