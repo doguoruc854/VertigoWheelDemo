@@ -15,6 +15,15 @@ MonoBehaviour:
   slices:
   - reward: {fileID: 11400000, guid: e91c209edaf30b44cbd3142e88049bb7, type: 2}
     isBomb: 0
+    weight: 2
+  - reward: {fileID: 0}
+    isBomb: 1
+    weight: 1
+  - reward: {fileID: 11400000, guid: e91c209edaf30b44cbd3142e88049bb7, type: 2}
+    isBomb: 0
+    weight: 2
+  - reward: {fileID: 11400000, guid: e91c209edaf30b44cbd3142e88049bb7, type: 2}
+    isBomb: 0
     weight: 1
   - reward: {fileID: 0}
     isBomb: 1
@@ -22,3 +31,9 @@ MonoBehaviour:
   - reward: {fileID: 11400000, guid: e91c209edaf30b44cbd3142e88049bb7, type: 2}
     isBomb: 0
     weight: 2
+  - reward: {fileID: 11400000, guid: e91c209edaf30b44cbd3142e88049bb7, type: 2}
+    isBomb: 0
+    weight: 1
+  - reward: {fileID: 11400000, guid: e91c209edaf30b44cbd3142e88049bb7, type: 2}
+    isBomb: 0
+    weight: 1
