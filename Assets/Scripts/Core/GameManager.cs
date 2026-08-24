@@ -101,21 +101,21 @@ public class GameManager : MonoBehaviour
 
         if (wheel == null)
         {
-            ApplySpinResult(slice);
+            ApplySpinResult(slice, index);
             return;
         }
 
         RefreshButtons();
-        wheel.SpinToIndex(index, () => ApplySpinResult(slice));
+        wheel.SpinToIndex(index, () => ApplySpinResult(slice, index));
     }
 
-    private int ApplyReward(WheelSliceData slice)
+    private int ApplyReward(WheelSliceData slice, Sprite icon)
     {
         if (slice.reward == null)
             return 0;
 
         int amount = slice.reward.RollAmount();
-        var context = new RewardContext(_rewards, slice.reward, amount);
+        var context = new RewardContext(_rewards, slice.reward, amount, icon);
 
         if (slice.reward.rewardType == RewardType.Currency)
             new CurrencyRewardEffect().Apply(context);
@@ -127,7 +127,7 @@ public class GameManager : MonoBehaviour
         return amount;
     }
 
-    private void ApplySpinResult(WheelSliceData slice)
+    private void ApplySpinResult(WheelSliceData slice, int slotIndex)
     {
         if (!_state.TryStateTransition(GameState.Result))
             return;
@@ -146,13 +146,16 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        int rolled = ApplyReward(slice);
+        Sprite icon = null;
+        if (wheel != null)
+            icon = wheel.GetSlotIcon(slotIndex);
+        if (icon == null && slice.reward != null)
+            icon = slice.reward.PickRandomIcon();
+
+        int rolled = ApplyReward(slice, icon);
 
         if (resultUI != null)
-        {
-            Sprite icon = slice.reward != null ? slice.reward.icon : null;
             resultUI.ShowReward(icon, rolled);
-        }
 
         _zones.AdvanceZone();
         _state.TryStateTransition(GameState.Idle);

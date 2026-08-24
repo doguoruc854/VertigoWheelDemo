@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 public class RewardManager
 {
@@ -6,7 +7,7 @@ public class RewardManager
 
     public IReadOnlyList<InventoryEntry> Entries => _entries;
 
-    public void AddReward(RewardDataSO reward, int amount)
+    public void AddReward(RewardDataSO reward, int amount, Sprite iconOverride = null)
     {
         if (reward == null || amount <= 0)
             return;
@@ -15,11 +16,15 @@ public class RewardManager
         if (string.IsNullOrEmpty(key))
             key = reward.name;
 
+        Sprite icon = iconOverride != null ? iconOverride : reward.PickRandomIcon();
+
         for (int i = 0; i < _entries.Count; i++)
         {
             if (_entries[i].Id == key)
             {
                 _entries[i].Amount += amount;
+                if (icon != null)
+                    _entries[i].Icon = icon;
                 return;
             }
         }
@@ -29,7 +34,7 @@ public class RewardManager
         {
             Id = key,
             DisplayName = reward.displayName,
-            Icon = reward.icon,
+            Icon = icon,
             Amount = amount,
             IsItemCount = isItem,
             RewardType = reward.rewardType

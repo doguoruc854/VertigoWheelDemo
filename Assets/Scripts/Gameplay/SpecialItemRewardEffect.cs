@@ -6,6 +6,6 @@ public class SpecialItemRewardEffect : IRewardEffect
             return;
 
         int amount = context.Amount > 0 ? context.Amount : 1;
-        context.Rewards.AddReward(context.Data, amount);
+        context.Rewards.AddReward(context.Data, amount, context.Icon);
     }
 }

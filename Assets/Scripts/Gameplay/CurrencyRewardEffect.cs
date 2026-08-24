@@ -5,6 +5,6 @@ public class CurrencyRewardEffect : IRewardEffect
         if (context == null || context.Rewards == null || context.Data == null)
             return;
 
-        context.Rewards.AddReward(context.Data, context.Amount);
+        context.Rewards.AddReward(context.Data, context.Amount, context.Icon);
     }
 }

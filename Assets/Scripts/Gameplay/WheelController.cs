@@ -17,11 +17,23 @@ public class WheelController : MonoBehaviour
     [SerializeField] private Sprite bronzeBase;
     [SerializeField] private Sprite silverBase;
     [SerializeField] private Sprite goldenBase;
+    [SerializeField] private Image indicatorImage;
+    [SerializeField] private Sprite bronzeIndicator;
+    [SerializeField] private Sprite silverIndicator;
+    [SerializeField] private Sprite goldenIndicator;
 
     private Image[] _slotImages;
+    private Sprite[] _slotIcons;
     private bool _spinning;
 
     public bool IsSpinning => _spinning;
+
+    public Sprite GetSlotIcon(int index)
+    {
+        if (_slotIcons == null || index < 0 || index >= _slotIcons.Length)
+            return null;
+        return _slotIcons[index];
+    }
 
     public void BuildSlots(WheelConfigSO wheelConfig)
     {
@@ -33,7 +45,9 @@ public class WheelController : MonoBehaviour
 
         int count = config.slices.Count;
         _slotImages = new Image[count];
+        _slotIcons = new Sprite[count];
         float step = 360f / count;
+        ResolveSlotLayout(out float radius, out Vector2 size);
 
         for (int i = 0; i < count; i++)
         {
@@ -44,38 +58,54 @@ public class WheelController : MonoBehaviour
             rt.anchorMin = new Vector2(0.5f, 0.5f);
             rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = slotSize;
+            rt.sizeDelta = size;
 
             float angleDeg = i * step;
             float rad = (angleDeg + 90f) * Mathf.Deg2Rad;
-            rt.anchoredPosition = new Vector2(Mathf.Cos(rad) * slotRadius, Mathf.Sin(rad) * slotRadius);
+            rt.anchoredPosition = new Vector2(Mathf.Cos(rad) * radius, Mathf.Sin(rad) * radius);
 
             var img = go.GetComponent<Image>();
             img.preserveAspect = true;
             img.raycastTarget = false;
-            ApplySliceVisual(img, config.slices[i]);
+            Sprite display = ResolveSliceIcon(config.slices[i]);
+            _slotIcons[i] = display;
+            img.sprite = display;
+            img.enabled = display != null;
             _slotImages[i] = img;
         }
     }
 
-    private void ApplySliceVisual(Image img, WheelSliceData slice)
+    private void ResolveSlotLayout(out float radius, out Vector2 size)
+    {
+        float wheelSize = 0f;
+        if (spinRoot != null)
+        {
+            wheelSize = Mathf.Min(spinRoot.rect.width, spinRoot.rect.height);
+            if (wheelSize < 1f)
+                wheelSize = Mathf.Min(Mathf.Abs(spinRoot.sizeDelta.x), Mathf.Abs(spinRoot.sizeDelta.y));
+        }
+
+        if (wheelSize < 1f)
+        {
+            radius = slotRadius;
+            size = slotSize;
+            return;
+        }
+
+        radius = wheelSize * 0.306f;
+        float icon = wheelSize * 0.122f;
+        size = new Vector2(icon, icon);
+    }
+
+    private Sprite ResolveSliceIcon(WheelSliceData slice)
     {
         if (slice != null && slice.isBomb)
-        {
-            img.sprite = bombIcon;
-            img.enabled = bombIcon != null;
-            return;
-        }
+            return bombIcon;
 
-        if (slice != null && slice.reward != null && slice.reward.icon != null)
-        {
-            img.sprite = slice.reward.icon;
-            img.enabled = true;
-            return;
-        }
+        if (slice != null && slice.reward != null)
+            return slice.reward.PickRandomIcon();
 
-        img.sprite = null;
-        img.enabled = false;
+        return null;
     }
 
     private void ClearSlots()
@@ -87,6 +117,7 @@ public class WheelController : MonoBehaviour
             Destroy(slotsParent.GetChild(i).gameObject);
 
         _slotImages = null;
+        _slotIcons = null;
     }
 
     public void SpinToIndex(int index, Action onComplete)
@@ -137,14 +168,29 @@ public class WheelController : MonoBehaviour
 
     public void ApplyZoneLook(ZoneType zoneType)
     {
-        if (baseImage == null)
-            return;
-        if (zoneType == ZoneType.Super && goldenBase != null)
-            baseImage.sprite = goldenBase;
-        else if (zoneType == ZoneType.Safe && silverBase != null)
-            baseImage.sprite = silverBase;
-        else if (bronzeBase != null)
-            baseImage.sprite = bronzeBase;
+        Sprite baseSprite = bronzeBase;
+        Sprite indicatorSprite = bronzeIndicator;
+
+        if (zoneType == ZoneType.Super)
+        {
+            if (goldenBase != null)
+                baseSprite = goldenBase;
+            if (goldenIndicator != null)
+                indicatorSprite = goldenIndicator;
+        }
+        else if (zoneType == ZoneType.Safe)
+        {
+            if (silverBase != null)
+                baseSprite = silverBase;
+            if (silverIndicator != null)
+                indicatorSprite = silverIndicator;
+        }
+
+        if (baseImage != null && baseSprite != null)
+            baseImage.sprite = baseSprite;
+
+        if (indicatorImage != null && indicatorSprite != null)
+            indicatorImage.sprite = indicatorSprite;
     }
 }
 

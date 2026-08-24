@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2564f07039b2a4c4db72e909fa03fa4f, type: 3}
+  m_Name: RewardData_WeaponUpgrade
+  m_EditorClassIdentifier: 
+  id: weapon_upgrade
+  displayName: Weapon Upgrade
+  icon: {fileID: 21300000, guid: 662134b046db4874fa969d1cfc1faa71, type: 3}
+  iconVariants:
+  - {fileID: 21300000, guid: 662134b046db4874fa969d1cfc1faa71, type: 3}
+  - {fileID: 21300000, guid: 4cd3c14d7c659574685aecf8581644d1, type: 3}
+  - {fileID: 21300000, guid: 9609a4a434df6a34ab66c0234d58fc89, type: 3}
+  - {fileID: 21300000, guid: 8091a6f71cf8dde49990f81db14726cf, type: 3}
+  - {fileID: 21300000, guid: 3aaa9e4331c4238419547df80a78dc72, type: 3}
+  - {fileID: 21300000, guid: 20c176a344c358a42b69a2ea34faba50, type: 3}
+  - {fileID: 21300000, guid: 2472717288a5bea458fb66fcfd5bf028, type: 3}
+  rewardType: 2
+  value: 1
+  minValue: 1
+  maxValue: 1
