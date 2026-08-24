@@ -23,4 +23,9 @@ public void Reset()
 {
     CurrentZone = 1;
 }
+
+public void SetZone(int zone)
+{
+    CurrentZone = zone < 1 ? 1 : zone;
+}
 }

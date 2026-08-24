@@ -362,14 +362,24 @@ public class GameManager : MonoBehaviour
     [ContextMenu("Debug Jump To Zone 5")]
     private void DebugJumpToZone5()
     {
+        DebugJumpToZone(5, "Safe");
+    }
+
+    [ContextMenu("Debug Jump To Zone 30")]
+    private void DebugJumpToZone30()
+    {
+        DebugJumpToZone(30, "Super");
+    }
+
+    private void DebugJumpToZone(int zone, string label)
+    {
         if (!Application.isPlaying)
             return;
-        _zones.Reset();
-        while (_zones.CurrentZone < 5)
-            _zones.AdvanceZone();
+
+        _zones.SetZone(zone);
         RefreshHud();
         RefreshButtons();
-        Debug.Log("Debug -> Zone 5 (Safe). Leave should be active.");
         ApplyCurrentZoneWheel();
+        Debug.Log($"Debug -> Zone {zone} ({label}). Leave should be active.");
     }
 }
