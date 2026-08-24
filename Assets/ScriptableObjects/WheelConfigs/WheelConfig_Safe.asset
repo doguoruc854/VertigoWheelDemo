@@ -13,27 +13,27 @@ MonoBehaviour:
   m_Name: WheelConfig_Safe
   m_EditorClassIdentifier: 
   slices:
+  - reward: {fileID: 11400000, guid: 7c4e1a9b2d8f4e6a91b0c3d5e7f8a9b0, type: 2}
+    isBomb: 0
+    weight: 6
   - reward: {fileID: 11400000, guid: e91c209edaf30b44cbd3142e88049bb7, type: 2}
     isBomb: 0
-    weight: 2
+    weight: 4
+  - reward: {fileID: 11400000, guid: 9f8e7d6c5b4a39281706f5e4d3c2b1a0, type: 2}
+    isBomb: 0
+    weight: 5
+  - reward: {fileID: 11400000, guid: 1a2b3c4d5e6f708192a3b4c5d6e7f809, type: 2}
+    isBomb: 0
+    weight: 4
+  - reward: {fileID: 11400000, guid: 7c4e1a9b2d8f4e6a91b0c3d5e7f8a9b0, type: 2}
+    isBomb: 0
+    weight: 5
   - reward: {fileID: 11400000, guid: e91c209edaf30b44cbd3142e88049bb7, type: 2}
     isBomb: 0
-    weight: 1
-  - reward: {fileID: 11400000, guid: e91c209edaf30b44cbd3142e88049bb7, type: 2}
+    weight: 3
+  - reward: {fileID: 11400000, guid: 2b3c4d5e6f708192a3b4c5d6e7f8091a, type: 2}
     isBomb: 0
-    weight: 2
-  - reward: {fileID: 11400000, guid: e91c209edaf30b44cbd3142e88049bb7, type: 2}
+    weight: 4
+  - reward: {fileID: 11400000, guid: 4d5e6f708192a3b4c5d6e7f8091a2b3c, type: 2}
     isBomb: 0
-    weight: 1
-  - reward: {fileID: 11400000, guid: e91c209edaf30b44cbd3142e88049bb7, type: 2}
-    isBomb: 0
-    weight: 1
-  - reward: {fileID: 11400000, guid: e91c209edaf30b44cbd3142e88049bb7, type: 2}
-    isBomb: 0
-    weight: 2
-  - reward: {fileID: 11400000, guid: e91c209edaf30b44cbd3142e88049bb7, type: 2}
-    isBomb: 0
-    weight: 1
-  - reward: {fileID: 11400000, guid: e91c209edaf30b44cbd3142e88049bb7, type: 2}
-    isBomb: 0
-    weight: 1
+    weight: 3

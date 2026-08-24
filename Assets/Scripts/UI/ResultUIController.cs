@@ -10,6 +10,9 @@ public class ResultUIController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI resultText;
     [SerializeField] private Sprite bombIcon;
     [SerializeField] private float showDuration = 0.3f;
+    [SerializeField] private float rewardAutoHideDelay = 1.25f;
+
+    private Tween _autoHideTween;
 
     private void OnValidate()
     {
@@ -38,6 +41,7 @@ public class ResultUIController : MonoBehaviour
 
     private void OnDisable()
     {
+        KillAutoHide();
         KillContentTweens(resetScale: false);
     }
 
@@ -53,10 +57,13 @@ public class ResultUIController : MonoBehaviour
             resultText.text = "+" + value;
 
         PlayShow();
+        ScheduleAutoHide();
     }
 
     public void ShowBomb()
     {
+        KillAutoHide();
+
         if (resultIcon != null)
         {
             resultIcon.sprite = bombIcon;
@@ -71,6 +78,7 @@ public class ResultUIController : MonoBehaviour
 
     public void Hide()
     {
+        KillAutoHide();
         KillContentTweens(resetScale: true);
 
         if (panelRoot != null)
@@ -92,6 +100,19 @@ public class ResultUIController : MonoBehaviour
             child.localScale = Vector3.zero;
             child.DOScale(Vector3.one, showDuration).SetEase(Ease.OutBack);
         }
+    }
+
+    private void ScheduleAutoHide()
+    {
+        KillAutoHide();
+        _autoHideTween = DOVirtual.DelayedCall(rewardAutoHideDelay, Hide);
+    }
+
+    private void KillAutoHide()
+    {
+        if (_autoHideTween != null && _autoHideTween.IsActive())
+            _autoHideTween.Kill();
+        _autoHideTween = null;
     }
 
     private void KillContentTweens(bool resetScale)

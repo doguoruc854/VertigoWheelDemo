@@ -1,222 +1,244 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
     [SerializeField] private HUDController hud;
+    [SerializeField] private InventoryUIController inventoryUI;
     [SerializeField] private WheelController wheel;
     [SerializeField] private WheelUIController wheelUI;
     [SerializeField] private ResultUIController resultUI;
     [SerializeField] private WheelConfigSO normalConfig;
     [SerializeField] private WheelConfigSO safeConfig;
     [SerializeField] private WheelConfigSO superConfig;
+
     private ZoneManager _zones;
     private GameStateMachine _state;
     private RewardManager _rewards;
     private WheelResolver _resolver;
 
-    private void Awake() {
+    private void Awake()
+    {
         _zones = new ZoneManager();
         _state = new GameStateMachine();
         _rewards = new RewardManager();
         _resolver = new WheelResolver();
         RefreshHud();
         RefreshButtons();
-
     }
-    private void RefreshHud(){
-    if (hud != null)
-        hud.Refresh(_rewards.TotalCurrency, _zones.CurrentZone);
-}
 
+    private void Start()
+    {
+        ApplyCurrentZoneWheel();
+        RefreshHud();
+        RefreshButtons();
+    }
 
-    private void Update() {
+    private void RefreshHud()
+    {
+        if (hud != null)
+            hud.RefreshZone(_zones.CurrentZone);
+
+        if (inventoryUI != null)
+            inventoryUI.Refresh(_rewards.Entries);
+    }
+
+    private void Update()
+    {
         if (!Input.GetKeyDown(KeyCode.Space))
             return;
 
-        if (_state.CurrentState == GameState.Idle)    {
+        if (_state.CurrentState == GameState.Idle)
+        {
             TrySpin();
             return;
         }
-        if (_state.CurrentState == GameState.GameOver){
+
+        if (_state.CurrentState == GameState.GameOver)
             RestartAfterBomb();
-        }
     }
 
-
-    private void RestartAfterBomb(){
-    _rewards.ClearAll();
-    _zones.Reset();
-    _state.TryStateTransition(GameState.Idle);
-    Debug.Log("Restart → Zone 1, rewards cleared");
-    if (resultUI != null)
-    resultUI.Hide();
-    RefreshHud();
-    RefreshButtons();
-    ApplyCurrentZoneWheel();
-}
-
-    private void TrySpin()
-{
-    if (wheel != null && wheel.IsSpinning)
-        return;
-
-    if (resultUI != null)
-    resultUI.Hide();    
-
-    if (!_state.TryStateTransition(GameState.Spinning))
-        return;
-    WheelConfigSO config = GetConfigForZone();
-    WheelSliceData slice = _resolver.Resolve(config);
-
-    if (slice == null)
+    private void RestartAfterBomb()
     {
-        Debug.LogWarning("No slice resolved");
-        _state.TryStateTransition(GameState.Idle);
-        return;
-    }
-
-    int index = config.slices.IndexOf(slice);
-    if (index < 0)
-    {
-        Debug.LogWarning("Resolved slice not in config");
-        _state.TryStateTransition(GameState.Idle);
-        return;
-    }
-
-    if (wheel == null)
-    {
-        ApplySpinResult(slice);
-        return;
-    }
-    RefreshButtons();
-    wheel.SpinToIndex(index, () => ApplySpinResult(slice));
-}  
-
-        private void ApplyReward(WheelSliceData slice){
-            if (slice.reward == null)
-            return;
-
-            var context = new RewardContext(_rewards, slice.reward);
-
-            if (slice.reward.rewardType == RewardType.Currency)
-                new CurrencyRewardEffect().Apply(context);
-            else if (slice.reward.rewardType == RewardType.Multiplier)
-                new MultiplierRewardEffect().Apply(context);
-        } 
-
-        private void ApplySpinResult(WheelSliceData slice)
-{
-    if (!_state.TryStateTransition(GameState.Result))
-        return;
-
-    if (slice.isBomb)
-    {
-        if (resultUI != null)
-            resultUI.ShowBomb(); 
-
         _rewards.ClearAll();
-        _state.TryStateTransition(GameState.GameOver);
-        Debug.Log("BOMB HIT GAME OVER | Zone " + _zones.CurrentZone + " | Total " + _rewards.TotalCurrency);
+        _zones.Reset();
+        _state.TryStateTransition(GameState.Idle);
+        Debug.Log("Restart → Zone 1, rewards cleared");
+        if (resultUI != null)
+            resultUI.Hide();
         RefreshHud();
         RefreshButtons();
         ApplyCurrentZoneWheel();
-        return;
     }
 
-
-    ApplyReward(slice);
-
-    if (resultUI != null)     
+    private void TrySpin()
     {
-        Sprite icon = slice.reward != null ? slice.reward.icon : null;
-        int value = slice.reward != null ? slice.reward.value : 0;
-        resultUI.ShowReward(icon, value);
+        if (wheel != null && wheel.IsSpinning)
+            return;
+
+        if (resultUI != null)
+            resultUI.Hide();
+
+        if (!_state.TryStateTransition(GameState.Spinning))
+            return;
+
+        WheelConfigSO config = GetConfigForZone();
+        WheelSliceData slice = _resolver.Resolve(config);
+
+        if (slice == null)
+        {
+            Debug.LogWarning("No slice resolved");
+            _state.TryStateTransition(GameState.Idle);
+            return;
+        }
+
+        int index = config.slices.IndexOf(slice);
+        if (index < 0)
+        {
+            Debug.LogWarning("Resolved slice not in config");
+            _state.TryStateTransition(GameState.Idle);
+            return;
+        }
+
+        if (wheel == null)
+        {
+            ApplySpinResult(slice);
+            return;
+        }
+
+        RefreshButtons();
+        wheel.SpinToIndex(index, () => ApplySpinResult(slice));
     }
 
-    _zones.AdvanceZone();
-    _state.TryStateTransition(GameState.Idle);
+    private int ApplyReward(WheelSliceData slice)
+    {
+        if (slice.reward == null)
+            return 0;
 
-    Debug.Log(
-        $"Reward OK | Zone {_zones.CurrentZone} ({_zones.CurrentType}) | Total {_rewards.TotalCurrency}");
-    RefreshHud();
-    RefreshButtons();
-    ApplyCurrentZoneWheel();
-}
-        
-        public void RequestSpin(){
-            
-            if (_state.CurrentState == GameState.GameOver){
-                RestartAfterBomb();
-                return;
-            }
+        int amount = slice.reward.RollAmount();
+        var context = new RewardContext(_rewards, slice.reward, amount);
 
-            if (_state.CurrentState != GameState.Idle)
-                return;
-            TrySpin();
-            RefreshButtons();
-        }
-        
-        public void RequestLeave(){
-            if(_state.CurrentState != GameState.Idle)
-                return;
-            if(!_zones.IsSafeZone && !_zones.IsSuperZone)
-                return;
-            if(wheel != null && wheel.IsSpinning)
-                return;
-            if(!_state.TryStateTransition(GameState.GameOver))
-                return;
+        if (slice.reward.rewardType == RewardType.Currency)
+            new CurrencyRewardEffect().Apply(context);
+        else if (slice.reward.rewardType == RewardType.SpecialItem)
+            new SpecialItemRewardEffect().Apply(context);
+        else if (slice.reward.rewardType == RewardType.Multiplier)
+            new MultiplierRewardEffect().Apply(context);
+
+        return amount;
+    }
+
+    private void ApplySpinResult(WheelSliceData slice)
+    {
+        if (!_state.TryStateTransition(GameState.Result))
+            return;
+
+        if (slice.isBomb)
+        {
             if (resultUI != null)
+                resultUI.ShowBomb();
+
+            _rewards.ClearAll();
+            _state.TryStateTransition(GameState.GameOver);
+            Debug.Log("BOMB HIT GAME OVER | Zone " + _zones.CurrentZone);
+            RefreshHud();
+            RefreshButtons();
+            ApplyCurrentZoneWheel();
+            return;
+        }
+
+        int rolled = ApplyReward(slice);
+
+        if (resultUI != null)
+        {
+            Sprite icon = slice.reward != null ? slice.reward.icon : null;
+            resultUI.ShowReward(icon, rolled);
+        }
+
+        _zones.AdvanceZone();
+        _state.TryStateTransition(GameState.Idle);
+
+        Debug.Log(
+            $"Reward OK | Zone {_zones.CurrentZone} ({_zones.CurrentType}) | Entries {_rewards.Entries.Count}");
+        RefreshHud();
+        RefreshButtons();
+        ApplyCurrentZoneWheel();
+    }
+
+    public void RequestSpin()
+    {
+        if (_state.CurrentState == GameState.GameOver)
+        {
+            RestartAfterBomb();
+            return;
+        }
+
+        if (_state.CurrentState != GameState.Idle)
+            return;
+
+        TrySpin();
+        RefreshButtons();
+    }
+
+    public void RequestLeave()
+    {
+        if (_state.CurrentState != GameState.Idle)
+            return;
+        if (!_zones.IsSafeZone && !_zones.IsSuperZone)
+            return;
+        if (wheel != null && wheel.IsSpinning)
+            return;
+        if (!_state.TryStateTransition(GameState.GameOver))
+            return;
+
+        if (resultUI != null)
             resultUI.Hide();
-            Debug.Log($"LEFT WITH REWARDS | Zone {_zones.CurrentZone} | Total {_rewards.TotalCurrency}");
-            RefreshHud();
-            RefreshButtons();
-        }
 
-        private void RefreshButtons(){
-            if (wheelUI == null)
-                return;
+        Debug.Log($"LEFT WITH REWARDS | Zone {_zones.CurrentZone} | Entries {_rewards.Entries.Count}");
+        RefreshHud();
+        RefreshButtons();
+    }
 
-            bool idle = _state.CurrentState == GameState.Idle;
-            bool spinning = wheel != null && wheel.IsSpinning;
-            bool canSpin = 
-            (idle && !spinning) || (_state.CurrentState == GameState.GameOver);
-            bool canLeave = idle && !spinning && (_zones.IsSafeZone || _zones.IsSuperZone);
-            wheelUI.Refresh(canSpin, canLeave);
-        }
-        private WheelConfigSO GetConfigForZone(){
-            if (_zones.IsSuperZone)
-                return superConfig != null ? superConfig : normalConfig;
-            if (_zones.IsSafeZone)
-                return safeConfig != null ? safeConfig : normalConfig;
-            return normalConfig;
-        }
+    private void RefreshButtons()
+    {
+        if (wheelUI == null)
+            return;
 
-        private void ApplyCurrentZoneWheel(){
-            WheelConfigSO config = GetConfigForZone();
-            if (wheel == null || config == null)
-                return;
-            wheel.BuildSlots(config);
-            wheel.ApplyZoneLook(_zones.CurrentType);
-        }
-        
-        private void Start(){
-            ApplyCurrentZoneWheel();
-            RefreshHud();
-            RefreshButtons();
-        }
+        bool idle = _state.CurrentState == GameState.Idle;
+        bool spinning = wheel != null && wheel.IsSpinning;
+        bool canSpin = (idle && !spinning) || (_state.CurrentState == GameState.GameOver);
+        bool canLeave = idle && !spinning && (_zones.IsSafeZone || _zones.IsSuperZone);
+        wheelUI.Refresh(canSpin, canLeave);
+    }
 
-        [ContextMenu("Debug Jump To Zone 5")]
-        private void DebugJumpToZone5(){
-            if (!Application.isPlaying)
-                return;
-            _zones.Reset();
-            while (_zones.CurrentZone < 5)
-                _zones.AdvanceZone();
-            RefreshHud();
-            RefreshButtons();
-            Debug.Log("Debug -> Zone 5 (Safe). Leave should be active.");
-            ApplyCurrentZoneWheel();
-        }
-}   
+    private WheelConfigSO GetConfigForZone()
+    {
+        if (_zones.IsSuperZone)
+            return superConfig != null ? superConfig : normalConfig;
+        if (_zones.IsSafeZone)
+            return safeConfig != null ? safeConfig : normalConfig;
+        return normalConfig;
+    }
+
+    private void ApplyCurrentZoneWheel()
+    {
+        WheelConfigSO config = GetConfigForZone();
+        if (wheel == null || config == null)
+            return;
+        wheel.BuildSlots(config);
+        wheel.ApplyZoneLook(_zones.CurrentType);
+    }
+
+    [ContextMenu("Debug Jump To Zone 5")]
+    private void DebugJumpToZone5()
+    {
+        if (!Application.isPlaying)
+            return;
+        _zones.Reset();
+        while (_zones.CurrentZone < 5)
+            _zones.AdvanceZone();
+        RefreshHud();
+        RefreshButtons();
+        Debug.Log("Debug -> Zone 5 (Safe). Leave should be active.");
+        ApplyCurrentZoneWheel();
+    }
+}

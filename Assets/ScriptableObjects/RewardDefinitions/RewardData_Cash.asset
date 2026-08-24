@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2564f07039b2a4c4db72e909fa03fa4f, type: 3}
-  m_Name: RewardData_Gold
+  m_Name: RewardData_Cash
   m_EditorClassIdentifier: 
-  id: gold
-  displayName: Gold
-  icon: {fileID: 21300000, guid: 731059a2a7fdb004baf4b7dfd7844bcb, type: 3}
+  id: cash
+  displayName: Cash
+  icon: {fileID: 21300000, guid: a2530fdb58b1a0149a2fdbfd0ae5f043, type: 3}
   rewardType: 0
-  value: 10
-  minValue: 10
-  maxValue: 30
+  value: 500
+  minValue: 500
+  maxValue: 3000

@@ -1,31 +1,57 @@
-using UnityEngine;
 using System.Collections.Generic;
 
-public class RewardManager {
+public class RewardManager
+{
+    private readonly List<InventoryEntry> _entries = new List<InventoryEntry>();
 
-    private readonly List<RewardDataSO> _collected = new List<RewardDataSO>();
-    public IReadOnlyList<RewardDataSO> Collected => _collected;
-    public void AddReward(RewardDataSO reward) {
-        if (reward == null) 
+    public IReadOnlyList<InventoryEntry> Entries => _entries;
+
+    public void AddReward(RewardDataSO reward, int amount)
+    {
+        if (reward == null || amount <= 0)
             return;
 
-        _collected.Add(reward);  } 
+        string key = string.IsNullOrEmpty(reward.id) ? reward.displayName : reward.id;
+        if (string.IsNullOrEmpty(key))
+            key = reward.name;
 
-    public void ClearAll() {
-        _collected.Clear();
-    }
-
-    public int TotalCurrency {
-
-        get {
-            int sum = 0;
-            for (int i = 0; i < _collected.Count; i++) {
-                RewardDataSO item = _collected[i];
-                if (item.rewardType == RewardType.Currency)
-                    sum += item.value;      
+        for (int i = 0; i < _entries.Count; i++)
+        {
+            if (_entries[i].Id == key)
+            {
+                _entries[i].Amount += amount;
+                return;
+            }
         }
-        return sum;
+
+        bool isItem = reward.rewardType == RewardType.SpecialItem;
+        _entries.Add(new InventoryEntry
+        {
+            Id = key,
+            DisplayName = reward.displayName,
+            Icon = reward.icon,
+            Amount = amount,
+            IsItemCount = isItem,
+            RewardType = reward.rewardType
+        });
     }
 
-}
+    public void ClearAll()
+    {
+        _entries.Clear();
+    }
+
+    public int TotalCurrency
+    {
+        get
+        {
+            int sum = 0;
+            for (int i = 0; i < _entries.Count; i++)
+            {
+                if (_entries[i].RewardType == RewardType.Currency)
+                    sum += _entries[i].Amount;
+            }
+            return sum;
+        }
+    }
 }
