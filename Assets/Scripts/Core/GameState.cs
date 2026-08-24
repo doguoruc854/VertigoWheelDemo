@@ -1,7 +1,8 @@
-public enum GameState {
+public enum GameState
+{
     Idle,
     Spinning,
     Result,
-    GameOver
+    GameOver,
+    Ended
 }
-

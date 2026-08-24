@@ -10,15 +10,28 @@ public class GameStateMachineTests
     }
 
     [Test]
-    public void Idle_To_Spinning_And_LeaveGameOver_Allowed()
+    public void Idle_To_Spinning_And_LeaveEnded_Allowed()
     {
         var sm = new GameStateMachine();
         Assert.IsTrue(sm.TryStateTransition(GameState.Spinning));
         Assert.AreEqual(GameState.Spinning, sm.CurrentState);
 
         sm = new GameStateMachine();
-        Assert.IsTrue(sm.TryStateTransition(GameState.GameOver));
-        Assert.AreEqual(GameState.GameOver, sm.CurrentState);
+        Assert.IsTrue(sm.TryStateTransition(GameState.Ended));
+        Assert.AreEqual(GameState.Ended, sm.CurrentState);
+    }
+
+    [Test]
+    public void Ended_Only_To_Idle()
+    {
+        var sm = new GameStateMachine();
+        sm.TryStateTransition(GameState.Ended);
+
+        Assert.IsFalse(sm.TryStateTransition(GameState.Spinning));
+        Assert.AreEqual(GameState.Ended, sm.CurrentState);
+
+        Assert.IsTrue(sm.TryStateTransition(GameState.Idle));
+        Assert.AreEqual(GameState.Idle, sm.CurrentState);
     }
 
     [Test]

@@ -8,6 +8,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private WheelUIController wheelUI;
     [SerializeField] private ResultUIController resultUI;
     [SerializeField] private BombReviveUIController bombReviveUI;
+    [SerializeField] private LeaveSuccessUIController leaveSuccessUI;
     [SerializeField] private WheelConfigSO normalConfig;
     [SerializeField] private WheelConfigSO safeConfig;
     [SerializeField] private WheelConfigSO superConfig;
@@ -30,37 +31,62 @@ public class GameManager : MonoBehaviour
 
     private void OnEnable()
     {
-        if (bombReviveUI == null)
-            return;
-        bombReviveUI.GiveUpClicked += OnBombGiveUp;
-        bombReviveUI.ReviveClicked += OnBombRevive;
+        WireBombEvents(true);
+        WireLeaveEvents(true);
     }
 
     private void OnDisable()
     {
-        if (bombReviveUI == null)
-            return;
-        bombReviveUI.GiveUpClicked -= OnBombGiveUp;
-        bombReviveUI.ReviveClicked -= OnBombRevive;
+        WireBombEvents(false);
+        WireLeaveEvents(false);
     }
 
     private void Start()
     {
         if (bombReviveUI == null)
             bombReviveUI = FindObjectOfType<BombReviveUIController>(true);
+        if (leaveSuccessUI == null)
+            leaveSuccessUI = FindObjectOfType<LeaveSuccessUIController>(true);
+
+        WireBombEvents(false);
+        WireBombEvents(true);
+        WireLeaveEvents(false);
+        WireLeaveEvents(true);
 
         if (bombReviveUI != null)
-        {
-            bombReviveUI.GiveUpClicked -= OnBombGiveUp;
-            bombReviveUI.ReviveClicked -= OnBombRevive;
-            bombReviveUI.GiveUpClicked += OnBombGiveUp;
-            bombReviveUI.ReviveClicked += OnBombRevive;
             bombReviveUI.Hide();
-        }
+        if (leaveSuccessUI != null)
+            leaveSuccessUI.Hide();
 
         ApplyCurrentZoneWheel();
         RefreshHud();
         RefreshButtons();
+    }
+
+    private void WireBombEvents(bool subscribe)
+    {
+        if (bombReviveUI == null)
+            return;
+        if (subscribe)
+        {
+            bombReviveUI.GiveUpClicked += OnBombGiveUp;
+            bombReviveUI.ReviveClicked += OnBombRevive;
+        }
+        else
+        {
+            bombReviveUI.GiveUpClicked -= OnBombGiveUp;
+            bombReviveUI.ReviveClicked -= OnBombRevive;
+        }
+    }
+
+    private void WireLeaveEvents(bool subscribe)
+    {
+        if (leaveSuccessUI == null)
+            return;
+        if (subscribe)
+            leaveSuccessUI.ContinueClicked += OnLeaveContinue;
+        else
+            leaveSuccessUI.ContinueClicked -= OnLeaveContinue;
     }
 
     private void RefreshHud()
@@ -84,7 +110,13 @@ public class GameManager : MonoBehaviour
         }
 
         if (_state.CurrentState == GameState.GameOver)
+        {
             OnBombGiveUp();
+            return;
+        }
+
+        if (_state.CurrentState == GameState.Ended)
+            OnLeaveContinue();
     }
 
     private void RestartAfterBomb()
@@ -97,6 +129,8 @@ public class GameManager : MonoBehaviour
             resultUI.Hide();
         if (bombReviveUI != null)
             bombReviveUI.Hide();
+        if (leaveSuccessUI != null)
+            leaveSuccessUI.Hide();
         RefreshHud();
         RefreshButtons();
         ApplyCurrentZoneWheel();
@@ -137,6 +171,27 @@ public class GameManager : MonoBehaviour
         ApplyCurrentZoneWheel();
     }
 
+    private void OnLeaveContinue()
+    {
+        if (_state.CurrentState != GameState.Ended)
+            return;
+
+        _rewards.ClearAll();
+        _zones.Reset();
+        if (!_state.TryStateTransition(GameState.Idle))
+            return;
+
+        if (leaveSuccessUI != null)
+            leaveSuccessUI.Hide();
+        if (resultUI != null)
+            resultUI.Hide();
+
+        Debug.Log("Leave CONTINUE → new run Zone 1");
+        RefreshHud();
+        RefreshButtons();
+        ApplyCurrentZoneWheel();
+    }
+
     private void TrySpin()
     {
         if (wheel != null && wheel.IsSpinning)
@@ -146,6 +201,8 @@ public class GameManager : MonoBehaviour
             resultUI.Hide();
         if (bombReviveUI != null)
             bombReviveUI.Hide();
+        if (leaveSuccessUI != null)
+            leaveSuccessUI.Hide();
 
         if (!_state.TryStateTransition(GameState.Spinning))
             return;
@@ -255,7 +312,7 @@ public class GameManager : MonoBehaviour
             return;
         if (wheel != null && wheel.IsSpinning)
             return;
-        if (!_state.TryStateTransition(GameState.GameOver))
+        if (!_state.TryStateTransition(GameState.Ended))
             return;
 
         if (resultUI != null)
@@ -264,6 +321,10 @@ public class GameManager : MonoBehaviour
             bombReviveUI.Hide();
 
         Debug.Log($"LEFT WITH REWARDS | Zone {_zones.CurrentZone} | Entries {_rewards.Entries.Count}");
+
+        if (leaveSuccessUI != null)
+            leaveSuccessUI.Show(_rewards.Entries, _zones.CurrentZone);
+
         RefreshHud();
         RefreshButtons();
     }
