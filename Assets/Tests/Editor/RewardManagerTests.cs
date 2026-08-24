@@ -71,4 +71,22 @@ public class RewardManagerTests
         Assert.AreEqual(0, rm.Entries.Count);
         Assert.AreEqual(0, rm.TotalCurrency);
     }
+
+    [Test]
+    public void TrySpend_DeductsGold_AndFailsWhenInsufficient()
+    {
+        var rm = new RewardManager();
+        var gold = Currency("gold", 10, 30);
+        rm.AddReward(gold, 40);
+
+        Assert.IsFalse(rm.TrySpend("gold", 50));
+        Assert.AreEqual(40, rm.GetAmount("gold"));
+
+        Assert.IsTrue(rm.TrySpend("gold", 25));
+        Assert.AreEqual(15, rm.GetAmount("gold"));
+
+        Assert.IsTrue(rm.TrySpend("gold", 15));
+        Assert.AreEqual(0, rm.GetAmount("gold"));
+        Assert.AreEqual(0, rm.Entries.Count);
+    }
 }

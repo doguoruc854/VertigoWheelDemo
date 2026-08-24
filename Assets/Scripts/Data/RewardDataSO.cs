@@ -11,6 +11,8 @@ public class RewardDataSO : ScriptableObject
     public int value;
     public int minValue;
     public int maxValue;
+    [Tooltip("By this zone, currency rolls use the full max (min rises toward max). Max never increases.")]
+    public int zoneScalePeak = 30;
 
     public Sprite PickRandomIcon()
     {
@@ -40,11 +42,25 @@ public class RewardDataSO : ScriptableObject
         return icon;
     }
 
-    public int RollAmount()
+    public int RollAmount(int zone = 1)
     {
         if (rewardType == RewardType.SpecialItem)
             return 1;
 
+        GetScaledRange(zone, out int min, out int max);
+
+        if (min == 0 && max == 0)
+            return value;
+
+        return Random.Range(min, max + 1);
+    }
+
+    /// <summary>
+    /// Raises the floor toward max as zone increases; max stays fixed at maxValue.
+    /// Zone 1 = original min..max; at zoneScalePeak = max..max.
+    /// </summary>
+    public void GetScaledRange(int zone, out int scaledMin, out int scaledMax)
+    {
         int min = minValue;
         int max = maxValue;
         if (max < min)
@@ -54,9 +70,25 @@ public class RewardDataSO : ScriptableObject
             max = swap;
         }
 
-        if (min == 0 && max == 0)
-            return value;
+        scaledMax = max;
 
-        return Random.Range(min, max + 1);
+        if (min == 0 && max == 0)
+        {
+            scaledMin = 0;
+            return;
+        }
+
+        if (rewardType == RewardType.SpecialItem)
+        {
+            scaledMin = min;
+            return;
+        }
+
+        int peak = Mathf.Max(2, zoneScalePeak);
+        int z = Mathf.Max(1, zone);
+        float t = Mathf.Clamp01((z - 1f) / (peak - 1f));
+        scaledMin = Mathf.RoundToInt(Mathf.Lerp(min, max, t));
+        if (scaledMin > scaledMax)
+            scaledMin = scaledMax;
     }
 }

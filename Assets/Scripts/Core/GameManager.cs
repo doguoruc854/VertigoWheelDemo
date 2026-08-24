@@ -240,7 +240,7 @@ public class GameManager : MonoBehaviour
         if (slice.reward == null)
             return 0;
 
-        int amount = slice.reward.RollAmount();
+        int amount = slice.reward.RollAmount(_zones.CurrentZone);
         var context = new RewardContext(_rewards, slice.reward, amount, icon);
 
         if (slice.reward.rewardType == RewardType.Currency)

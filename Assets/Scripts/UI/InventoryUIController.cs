@@ -97,7 +97,8 @@ public class InventoryUIController : MonoBehaviour
         iconRt.anchorMax = new Vector2(0.5f, 1f);
         iconRt.pivot = new Vector2(0.5f, 1f);
         iconRt.sizeDelta = new Vector2(useIcon, useIcon);
-        iconRt.anchoredPosition = new Vector2(0f, -4f);
+        // Nudge down from panel top so icons stay inside the inventory frame.
+        iconRt.anchoredPosition = new Vector2(0f, -22f);
 
         var iconImg = iconGo.GetComponent<Image>();
         iconImg.preserveAspect = true;
@@ -112,7 +113,8 @@ public class InventoryUIController : MonoBehaviour
         textRt.anchorMax = new Vector2(1f, 0f);
         textRt.pivot = new Vector2(0.5f, 0f);
         textRt.sizeDelta = new Vector2(0f, useFont + 8f);
-        textRt.anchoredPosition = new Vector2(0f, 4f);
+        // Pull amount text up toward the icon (smaller gap, same sizes).
+        textRt.anchoredPosition = new Vector2(0f, 22f);
 
         var tmp = textGo.GetComponent<TextMeshProUGUI>();
         tmp.fontSize = useFont;
