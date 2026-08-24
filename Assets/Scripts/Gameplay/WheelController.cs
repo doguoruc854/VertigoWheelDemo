@@ -1,5 +1,5 @@
 using System;
-using System.Collections;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -98,12 +98,8 @@ public class WheelController : MonoBehaviour
         }
 
         index = Mathf.Clamp(index, 0, _slotImages.Length - 1);
-        StopAllCoroutines();
-        StartCoroutine(SpinRoutine(index, onComplete));
-    }
+        spinRoot.DOKill();
 
-    private IEnumerator SpinRoutine(int index, Action onComplete)
-    {
         _spinning = true;
 
         float step = 360f / _slotImages.Length;
@@ -113,20 +109,22 @@ public class WheelController : MonoBehaviour
         while (targetZ > startZ)
             targetZ -= 360f;
 
-        float elapsed = 0f;
-        while (elapsed < spinDuration)
-        {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / spinDuration);
-            float eased = 1f - Mathf.Pow(1f - t, 3f);
-            float z = Mathf.Lerp(startZ, targetZ, eased);
-            spinRoot.localEulerAngles = new Vector3(0f, 0f, z);
-            yield return null;
-        }
+        spinRoot
+            .DOLocalRotate(new Vector3(0f, 0f, targetZ), spinDuration, RotateMode.FastBeyond360)
+            .SetEase(Ease.OutCubic)
+            .OnComplete(() =>
+            {
+                spinRoot.localEulerAngles = new Vector3(0f, 0f, Mathf.Repeat(targetZ, 360f));
+                _spinning = false;
+                onComplete?.Invoke();
+            });
+    }
 
-        spinRoot.localEulerAngles = new Vector3(0f, 0f, Mathf.Repeat(targetZ, 360f));
+    private void OnDisable()
+    {
+        if (spinRoot != null)
+            spinRoot.DOKill();
         _spinning = false;
-        onComplete?.Invoke();
     }
 
     [ContextMenu("Debug Spin Index 0")]
