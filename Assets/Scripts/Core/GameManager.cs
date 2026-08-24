@@ -7,9 +7,11 @@ public class GameManager : MonoBehaviour
     [SerializeField] private WheelController wheel;
     [SerializeField] private WheelUIController wheelUI;
     [SerializeField] private ResultUIController resultUI;
+    [SerializeField] private BombReviveUIController bombReviveUI;
     [SerializeField] private WheelConfigSO normalConfig;
     [SerializeField] private WheelConfigSO safeConfig;
     [SerializeField] private WheelConfigSO superConfig;
+    [SerializeField] private string reviveCurrencyId = "gold";
 
     private ZoneManager _zones;
     private GameStateMachine _state;
@@ -26,8 +28,36 @@ public class GameManager : MonoBehaviour
         RefreshButtons();
     }
 
+    private void OnEnable()
+    {
+        if (bombReviveUI == null)
+            return;
+        bombReviveUI.GiveUpClicked += OnBombGiveUp;
+        bombReviveUI.ReviveClicked += OnBombRevive;
+    }
+
+    private void OnDisable()
+    {
+        if (bombReviveUI == null)
+            return;
+        bombReviveUI.GiveUpClicked -= OnBombGiveUp;
+        bombReviveUI.ReviveClicked -= OnBombRevive;
+    }
+
     private void Start()
     {
+        if (bombReviveUI == null)
+            bombReviveUI = FindObjectOfType<BombReviveUIController>(true);
+
+        if (bombReviveUI != null)
+        {
+            bombReviveUI.GiveUpClicked -= OnBombGiveUp;
+            bombReviveUI.ReviveClicked -= OnBombRevive;
+            bombReviveUI.GiveUpClicked += OnBombGiveUp;
+            bombReviveUI.ReviveClicked += OnBombRevive;
+            bombReviveUI.Hide();
+        }
+
         ApplyCurrentZoneWheel();
         RefreshHud();
         RefreshButtons();
@@ -54,7 +84,7 @@ public class GameManager : MonoBehaviour
         }
 
         if (_state.CurrentState == GameState.GameOver)
-            RestartAfterBomb();
+            OnBombGiveUp();
     }
 
     private void RestartAfterBomb()
@@ -65,6 +95,43 @@ public class GameManager : MonoBehaviour
         Debug.Log("Restart → Zone 1, rewards cleared");
         if (resultUI != null)
             resultUI.Hide();
+        if (bombReviveUI != null)
+            bombReviveUI.Hide();
+        RefreshHud();
+        RefreshButtons();
+        ApplyCurrentZoneWheel();
+    }
+
+    private void OnBombGiveUp()
+    {
+        if (_state.CurrentState != GameState.GameOver)
+            return;
+        RestartAfterBomb();
+    }
+
+    private void OnBombRevive()
+    {
+        if (_state.CurrentState != GameState.GameOver)
+            return;
+
+        int cost = bombReviveUI != null ? bombReviveUI.ReviveCost : 25;
+        if (!_rewards.TrySpend(reviveCurrencyId, cost))
+        {
+            Debug.LogWarning($"Revive failed — need {cost} {reviveCurrencyId}");
+            if (bombReviveUI != null)
+                bombReviveUI.Show(_rewards.GetAmount(reviveCurrencyId));
+            return;
+        }
+
+        if (!_state.TryStateTransition(GameState.Idle))
+            return;
+
+        if (bombReviveUI != null)
+            bombReviveUI.Hide();
+        if (resultUI != null)
+            resultUI.Hide();
+
+        Debug.Log($"REVIVE OK | paid {cost} {reviveCurrencyId} | Zone {_zones.CurrentZone} | Entries {_rewards.Entries.Count}");
         RefreshHud();
         RefreshButtons();
         ApplyCurrentZoneWheel();
@@ -77,6 +144,8 @@ public class GameManager : MonoBehaviour
 
         if (resultUI != null)
             resultUI.Hide();
+        if (bombReviveUI != null)
+            bombReviveUI.Hide();
 
         if (!_state.TryStateTransition(GameState.Spinning))
             return;
@@ -135,14 +204,16 @@ public class GameManager : MonoBehaviour
         if (slice.isBomb)
         {
             if (resultUI != null)
-                resultUI.ShowBomb();
+                resultUI.Hide();
 
-            _rewards.ClearAll();
             _state.TryStateTransition(GameState.GameOver);
-            Debug.Log("BOMB HIT GAME OVER | Zone " + _zones.CurrentZone);
+            Debug.Log("BOMB HIT | rewards kept until Give Up | Zone " + _zones.CurrentZone);
+
+            if (bombReviveUI != null)
+                bombReviveUI.Show(_rewards.GetAmount(reviveCurrencyId));
+
             RefreshHud();
             RefreshButtons();
-            ApplyCurrentZoneWheel();
             return;
         }
 
@@ -169,12 +240,6 @@ public class GameManager : MonoBehaviour
 
     public void RequestSpin()
     {
-        if (_state.CurrentState == GameState.GameOver)
-        {
-            RestartAfterBomb();
-            return;
-        }
-
         if (_state.CurrentState != GameState.Idle)
             return;
 
@@ -195,6 +260,8 @@ public class GameManager : MonoBehaviour
 
         if (resultUI != null)
             resultUI.Hide();
+        if (bombReviveUI != null)
+            bombReviveUI.Hide();
 
         Debug.Log($"LEFT WITH REWARDS | Zone {_zones.CurrentZone} | Entries {_rewards.Entries.Count}");
         RefreshHud();
@@ -208,7 +275,7 @@ public class GameManager : MonoBehaviour
 
         bool idle = _state.CurrentState == GameState.Idle;
         bool spinning = wheel != null && wheel.IsSpinning;
-        bool canSpin = (idle && !spinning) || (_state.CurrentState == GameState.GameOver);
+        bool canSpin = idle && !spinning;
         bool canLeave = idle && !spinning && (_zones.IsSafeZone || _zones.IsSuperZone);
         wheelUI.Refresh(canSpin, canLeave);
     }

@@ -46,6 +46,42 @@ public class RewardManager
         _entries.Clear();
     }
 
+    public int GetAmount(string id)
+    {
+        if (string.IsNullOrEmpty(id))
+            return 0;
+
+        for (int i = 0; i < _entries.Count; i++)
+        {
+            if (_entries[i].Id == id)
+                return _entries[i].Amount;
+        }
+
+        return 0;
+    }
+
+    public bool TrySpend(string id, int amount)
+    {
+        if (string.IsNullOrEmpty(id) || amount <= 0)
+            return false;
+
+        for (int i = 0; i < _entries.Count; i++)
+        {
+            if (_entries[i].Id != id)
+                continue;
+
+            if (_entries[i].Amount < amount)
+                return false;
+
+            _entries[i].Amount -= amount;
+            if (_entries[i].Amount <= 0)
+                _entries.RemoveAt(i);
+            return true;
+        }
+
+        return false;
+    }
+
     public int TotalCurrency
     {
         get
